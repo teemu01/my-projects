@@ -11,3 +11,9 @@ Developed during a summer internship.
 - Performs preprocessing on the data
 - Uses numba to speed up calculation
 - Compares simulation data to experimental data and visualizes the results.
+
+## Image classification
+An image classification project. Images are read from urls and preprocessed for an alaysis.
+- Ten features that capture color and texture information are extracted from the images
+- Data is visualized using pairplot, histogram and PCA.
+- Ridge, Random Forest and MLP classifiers were trained and evaluated to classify the images
