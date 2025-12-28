@@ -17,3 +17,10 @@ An image classification project. Images are read from urls and preprocessed for 
 - Ten features that capture color and texture information are extracted from the images
 - Data is visualized using pairplot, histogram and PCA.
 - Ridge, Random Forest and MLP classifiers were trained and evaluated to classify the images
+
+## Superdense coding project
+This project introduces and implements superdense coding protocol with IBM's Qiskit library in python.
+The project is written in Jupyter notebook.
+- Constructed quantum circuits for the superdense coding protocol and visualized with Qiskit.
+- Showed how an eavesdropper's measurement collapses the entangled state, preventing interception of the message.
+- Constructed three qubit quantum circuit generalization of superdense coding based on a theoretical work.
