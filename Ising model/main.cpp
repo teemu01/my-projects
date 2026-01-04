@@ -1,11 +1,15 @@
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
 #include <TCanvas.h>
 #include <TGraph.h>
 #include <TAxis.h>
+#include <TH2D.h>
+#include <TStyle.h>
+#include <TF1.h>
 
 using namespace std;
 
@@ -23,6 +27,16 @@ void compute_thermodynamical_quantities(int, double, double, int, int,
                                 const vector<double> &,
                                 vector<double> &, vector<double> &,
                                 vector<double> &, vector<double> &);
+bool write_data_to_file(const vector<double> &, const vector<double> &,
+                        const vector<double> &, const vector<double> &,
+                        const vector<double> &);
+Double_t fit_background_and_peak(Double_t *, Double_t *);
+void snapshots_of_the_system(int, double, double, const vector<vector<int>> &,
+                            const vector<double> &);
+
+
+
+
 
 
 
@@ -131,7 +145,7 @@ void display_vector(const vector<double> &v){
     cout << endl;
 }
 
-
+//Computes system energy, average magnetization, specific heat and susceptibility values as a function of temperature
 void compute_thermodynamical_quantities(int N, double J, double h, int thermalisation_number, int mean_number,
                                 vector<vector<int>> &spins,
                                 const vector<double> &temperature_values,
@@ -183,7 +197,80 @@ void compute_thermodynamical_quantities(int N, double J, double h, int thermalis
 }
 
 
+//Saves the temperature, energy, magnetization, susceptibility and speficif heat to a txt file
+// in case the data needs to be analyzed in another software
+bool write_data_to_file(const vector<double> &temperature_values,
+                        const vector<double> &energy_values,
+                        const vector<double> &magnetization_values,
+                        const vector<double> &susceptibility_values,
+                        const vector<double> &specific_heat_values){
 
+    ofstream out_file {};
+    out_file.open("IsingModel_data.txt");
+
+    if(!out_file){
+        return false;
+    }
+
+    out_file << "Temperature,Energy;Magnetization;Susceptibility;SpecificHeat" << "\n";
+    for (size_t i = 0; i < temperature_values.size(); i++){
+        out_file << temperature_values[i] << ";"
+                << energy_values[i] << ";"
+                << magnetization_values[i] << ";"
+                << susceptibility_values[i] << ";"
+                << specific_heat_values[i] << "\n";
+    }
+
+    out_file.close();
+    return true;
+}
+
+
+// Sum of background and peak function
+Double_t fit_background_and_peak(Double_t *x, Double_t *par) {
+      return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]
+      + par[3]*TMath::Gaus(x[0],par[4],par[5],true);
+}
+
+
+
+void snapshots_of_the_system(int N, double J, double h, const vector<vector<int>> &initial_spins,
+                            const vector<double> &snapshot_temperatures
+                            ){
+
+
+    auto *c = new TCanvas("c","Ising snapshots",1200,400);
+    c->Divide(3,1);
+    gStyle->SetOptStat(0);
+
+    for (int i = 0; i < 3; i++) {
+
+        auto spins = initial_spins;
+
+        double T = snapshot_temperatures[i];
+        double beta = 1.0 / T;
+
+        for (int j = 0; j < 5000; j++)
+            monte_carlo_move(spins, N, J, beta, h);
+
+        TH2D *g1 = new TH2D(Form("lattice%d",i),
+                            Form("Time=%d; x; y", i),
+                            N,0,N,
+                            N,0,N);
+
+        for (int x=0; x < N; x++)
+            for (int y=0; y < N; y++)
+                g1->SetBinContent(x+1,y+1,spins[x][y]);
+
+        g1->SetMinimum(-1);
+        g1->SetMaximum(1);
+
+        c->cd(i+1);
+        g1->Draw("COLZ");
+    }
+
+    c->SaveAs("IsingModel_snapshots.png");
+}
 
 //This is a numerical simulation of Ising model using metropolis algorithm.
 int main(){
@@ -278,6 +365,14 @@ int main(){
     gr3->SetMarkerSize(1.2);
     gr3->SetLineWidth(2);
 
+    TF1 *fitFcn = new TF1("fitFcn",fit_background_and_peak,2,3,6);
+
+    fitFcn->SetParNames("a","b","c", "A", "Tc", "sigma");
+    fitFcn->SetParameters(0, 0, 0, 50, 2.27, 0.03);
+
+    gr3->Fit("fitFcn");
+
+    double Tc = fitFcn->GetParameter(4);
     gr3-> Draw("AC*");
 
     c3->SaveAs("susceptibility_vs_temperature.png");
@@ -299,6 +394,31 @@ int main(){
 
     c4->SaveAs("specific_heat_vs_temperature.png");
 
+
+
+    //########################################
+
+    int snapshot_N {100};
+    vector<double> snapshot_temperatures {};
+    snapshot_temperatures.push_back(Tc-1);
+    snapshot_temperatures.push_back(Tc);
+    snapshot_temperatures.push_back(Tc+1);
+
+    vector<vector<int>> initial_spins {};
+    initialize_lattice(initial_spins, snapshot_N);
+
+    snapshots_of_the_system(snapshot_N, J, h, initial_spins, snapshot_temperatures);
+
+
+    //---------------------------------
+
+    if (write_data_to_file(temperature_values, energy_values, magnetization_values,
+                        susceptibility_values, specific_heat_values)
+        ){
+            cout << "file created succesfully" << endl;
+        }else{
+            cout << "Error creating file" << endl;
+        }
 
 
     return 0;
