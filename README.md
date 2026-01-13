@@ -23,3 +23,8 @@ This project implements the superdense coding quantum computing algorithm using 
 - Constructed quantum circuits for the superdense coding protocol which includes creating a bell state, encoding, decoding, measurement and circuit visualization with Qiskit.
 - Showed how an eavesdropper's measurement collapses the entangled state, preventing interception of the message.
 - Extended the protocol by including a third qubit to the ciruit based on a theoretical work. Analysed the results and showed that three bits of information can be transferred with two qubits.
+
+## Courses_db
+In this Python project I built a database which manages students, courses, teachers, study groups and credits.
+- Implemented a relational SQLite Database and developed SQL queries using JOINs, GROUP BY, UNION
+- Additional SQL queries to analyze, for example grade distribution
