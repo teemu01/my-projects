@@ -28,3 +28,9 @@ This project implements the superdense coding quantum computing algorithm using 
 In this Python project I built a database which manages students, courses, teachers, study groups and credits.
 - Implemented a relational SQLite Database and developed SQL queries using JOINs, GROUP BY, UNION
 - Additional SQL queries to analyze, for example grade distribution
+
+## Pure dephasing model
+In this project I studied open quantum system dynamics using pure dephasing model and used machine learning to identify environmental spectral types in Jupyter Notebook.
+- Generated time-dependent coherence signals for different bath types with different parameters
+- Converted the signals to frequency domain using FFT
+- Built a PyTorch neural-Network to classify bath types
