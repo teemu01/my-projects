@@ -1,4 +1,10 @@
-This repository showcases different python projects I have done during my studies.
+This repository showcases different python and c++ projects I have done during my studies.
+
+## Ising model
+I wrote a numerical simulation of 2D Ising model using C++. I independently learned and applied the ROOT library for data analysis and visualization.
+- Implemented Metropolis algorithm with periodic boundary conditions to compute thermodynamical quantities such as energy, magnetization, susceptibility and specific heat
+- Used ROOT to visualize the results as a functions of temperature. In addition, I used ROOT to fit a function to find the critical temperature for the model
+- Used ROOT to generate snapshots of the lattice near critical temperature to visualize phase transition
 
 ## yatzy-game
 A complete yatzy game written in Python. The code is written in finnish.
