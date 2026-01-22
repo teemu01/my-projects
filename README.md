@@ -1,15 +1,16 @@
 This repository showcases different python and c++ projects I have done during my studies.
 
 ## Ising model
-I wrote a numerical simulation of 2D Ising model using C++. I independently learned and applied the ROOT library for data analysis and visualization.
+I wrote a numerical simulation of 2D Ising model using C++. I independently learned and applied the ROOT library for data analysis and visualization. The generated figures are included in the same folder as the main code.
 - Implemented Metropolis algorithm with periodic boundary conditions to compute thermodynamical quantities such as energy, magnetization, susceptibility and specific heat
 - Used ROOT to visualize the results as a functions of temperature. In addition, I used ROOT to fit a function to find the critical temperature for the model
-- Used ROOT to generate snapshots of the lattice near critical temperature to visualize phase transition
+- Used ROOT to generate snapshots of the spin-lattice near critical temperature to visualize phase transition
 
-## yatzy-game
-A complete yatzy game written in Python. The code is written in finnish.
-- The game works on command-line interface
-- Writes and reads data from a file
+## Pure dephasing model
+In this project I studied open quantum system dynamics using pure dephasing model and used machine learning to identify environmental spectral types in Jupyter Notebook.
+- Generated time-dependent coherence signals for different bath types with different parameters
+- Converted the signals to frequency domain using FFT
+- Built a PyTorch neural-Network to classify bath types
 
 ## Structure factor calculation
 An analysis tool used to compute structure factor from a data obtained from cp2k ab initio molecular dynamics simulations.
@@ -35,8 +36,7 @@ In this Python project I built a database which manages students, courses, teach
 - Implemented a relational SQLite Database and developed SQL queries using JOINs, GROUP BY, UNION
 - Additional SQL queries to analyze, for example grade distribution
 
-## Pure dephasing model
-In this project I studied open quantum system dynamics using pure dephasing model and used machine learning to identify environmental spectral types in Jupyter Notebook.
-- Generated time-dependent coherence signals for different bath types with different parameters
-- Converted the signals to frequency domain using FFT
-- Built a PyTorch neural-Network to classify bath types
+## yatzy-game
+A complete yatzy game written in Python. The code is written in finnish.
+- The game works on command-line interface
+- Writes and reads data from a file
