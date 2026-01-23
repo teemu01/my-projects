@@ -3,7 +3,7 @@ This repository showcases different python and c++ projects I have done during m
 ## Ising model
 I wrote a numerical simulation of 2D Ising model using C++. I independently learned and applied the ROOT library for data analysis and visualization. The generated figures are included in the same folder as the main code.
 - Implemented Metropolis algorithm with periodic boundary conditions to compute thermodynamical quantities such as energy, magnetization, susceptibility and specific heat
-- Used ROOT to visualize the results as a functions of temperature. In addition, I used ROOT to fit a function to find the critical temperature for the model
+- Used ROOT to visualize the results as a functions of temperature. In addition, I used ROOT to fit a polynomial background + Gaussian model to susceptibility graph to find the critical temperature for the lattice
 - Used ROOT to generate snapshots of the spin-lattice near critical temperature to visualize phase transition
 
 ## Pure dephasing model
