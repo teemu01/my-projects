@@ -13,8 +13,8 @@
 
 using namespace std;
 
-// Function prototypes
-void display(const vector<vector<int>> &);
+
+//-------------------Function prototypes---------------------------------------------------
 void initialize_lattice(vector<vector<int>> &, int);
 double energy_diff_single_site(const vector<vector<int>> &, int, int, int, double, double);
 void site_flip(vector<vector<int>> &, int, int, double, double);
@@ -23,7 +23,7 @@ double system_hamiltonian(const vector<vector<int>> &, int, double, double);
 double system_magnetization(const vector<vector<int>> &, int);
 void display_vector(const vector<double>);
 void compute_thermodynamical_quantities(int, double, double, int, int,
-                                const vector<vector<int>> &,
+                                vector<vector<int>> &,
                                 const vector<double> &,
                                 vector<double> &, vector<double> &,
                                 vector<double> &, vector<double> &);
@@ -37,23 +37,152 @@ void snapshots_of_the_system(int, double, double, const vector<vector<int>> &,
 
 
 
+//--------------------------Main function-----------------------------------------------
+int main(){
+
+    // lattice size is N x N
+    int N {30};
+    // Interaction term
+    double J {1};
+    // External field
+    double h {0};
+    
+    double T_initial {1.5};
+    int thermalisation_number {5000};
+    int mean_number {3000};
 
 
+    //Initialize lattice with random spin values (+1 or -1) for each site
+    vector<vector<int>> spins {};
+    srand(time(nullptr));
+    initialize_lattice(spins, N);
 
 
-// Prints 2D spin lattice, showing each site (+1 or -1) in matrix form
-void display(const vector<vector<int>> &v){
-    cout << showpos;
-    for (auto i : v){
-        for (auto j : i){
-            cout <<  j << " ";
-        }
-        cout << endl;
+    //List of different thermodynamic quantities to derive
+    vector<double> magnetization_values {};
+    vector<double> susceptibility_values {};
+    vector<double> specific_heat_values {};
+    vector<double> energy_values {};
+
+
+    vector<double> temperature_values {};
+    for (int i = 0; i < 60; i++){
+        double temperature = T_initial + 0.02*i;
+        temperature_values.push_back(temperature);
     }
-    cout << noshowpos << endl;
+
+    compute_thermodynamical_quantities(N, J, h, thermalisation_number, mean_number,
+                                spins, temperature_values, energy_values,
+                                magnetization_values, susceptibility_values,
+                                specific_heat_values);
+
+
+
+
+    //--------------------Plotting thermodynamical quantities-------------------
+    TGraph *gr1 = new TGraph(temperature_values.size(),
+                 temperature_values.data(),
+                 magnetization_values.data());
+
+    TCanvas *c1 = new TCanvas("c1", "Graph Draw Options", 200, 10, 800, 600);
+
+    gr1->SetTitle("Magnetization vs Temperature;T;M");
+    gr1->SetMarkerStyle(20);
+    gr1->SetMarkerSize(1.2);
+    gr1->SetLineWidth(2);
+    gr1-> Draw("AC*");
+
+    c1->SaveAs("magnetization_vs_temperature.png");
+
+    //-----------------------------------------------------------------------
+    TGraph *gr2 = new TGraph(temperature_values.size(),
+                 temperature_values.data(),
+                 energy_values.data());
+
+    TCanvas *c2 = new TCanvas("c2", "Graph Draw Options", 200, 10, 800, 600);
+
+    gr2->SetTitle("Energy vs Temperature;T;E");
+    gr2->SetMarkerStyle(20);
+    gr2->SetMarkerSize(1.2);
+    gr2->SetLineWidth(2);
+    gr2-> Draw("AC*");
+
+    c2->SaveAs("energy_vs_temperature.png");
+
+    //-----------------------------------------------------------------------
+    TGraph *gr3 = new TGraph(temperature_values.size(),
+                 temperature_values.data(),
+                 susceptibility_values.data());
+
+    TCanvas *c3 = new TCanvas("c3", "Graph Draw Options", 200, 10, 800, 600);
+
+    gr3->SetTitle("Susceptibility vs Temperature;T;X");
+    gr3->SetMarkerStyle(20);
+    gr3->SetMarkerSize(1.2);
+    gr3->SetLineWidth(2);
+
+    TF1 *fitFcn = new TF1("fitFcn",fit_background_and_peak,2,3,6);
+    fitFcn->SetParNames("a","b","c", "A", "Tc", "sigma");
+    fitFcn->SetParameters(0, 0, 0, 50, 2.27, 0.03);
+
+    gr3->Fit("fitFcn");
+    double Tc = fitFcn->GetParameter(4);
+    gr3-> Draw("AC*");
+
+    c3->SaveAs("susceptibility_vs_temperature.png");
+
+    //-----------------------------------------------------------------------
+    TGraph *gr4 = new TGraph(temperature_values.size(),
+                 temperature_values.data(),
+                 specific_heat_values.data());
+
+    TCanvas *c4 = new TCanvas("c4", "Graph Draw Options", 200, 10, 800, 600);
+
+    gr4->SetTitle("Specific Heat vs Temperature;T;C");
+    gr4->SetMarkerStyle(20);
+    gr4->SetMarkerSize(1.2);
+    gr4->SetLineWidth(2);
+    gr4-> Draw("AC*");
+
+    c4->SaveAs("specific_heat_vs_temperature.png");
+
+   //--------------Snapshots------------------------------
+
+    int snapshot_N {100};
+    vector<double> snapshot_temperatures {};
+    snapshot_temperatures.push_back(Tc-1);
+    snapshot_temperatures.push_back(Tc);
+    snapshot_temperatures.push_back(Tc+1);
+
+    vector<vector<int>> initial_spins {};
+    initialize_lattice(initial_spins, snapshot_N);
+
+    snapshots_of_the_system(snapshot_N, J, h, initial_spins, snapshot_temperatures);
+
+
+    //-----------------------------Save data------------------------------------
+
+    if (write_data_to_file(temperature_values, energy_values, magnetization_values,
+                        susceptibility_values, specific_heat_values)
+        ){
+            cout << "file created succesfully" << endl;
+        }else{
+            cout << "Error creating file" << endl;
+        }
+
+
+    return 0;
 }
 
-//Creates a N x N lattice of random spin values of +1 or -1
+//-----------------------Functions---------------------------------
+
+/**
+ * Creates an N × N lattice where each spin is randomly assigned
+ * a value of +1 or -1 with equal probability.
+ *
+ * @param spins Empty spin lattice to be initialized
+ * @param N Size of the lattice
+ */
 void initialize_lattice(vector<vector<int>> &spins, int N){
     vector<int> temp {};
     int rand_spin_state {};
@@ -66,7 +195,20 @@ void initialize_lattice(vector<vector<int>> &spins, int N){
         spins.push_back(temp);
     }
 }
-// Computes The energy difference of initial energy and energy after a flip at site (a,b) happens
+
+
+/**
+ * Computes The energy difference of initial energy and energy
+ * after a flip at lattice site (a,b), assuming periodic boundary conditions
+ *
+ * @param spins N x N spin lattice
+ * @param a Row index of the spin
+ * @param b Column index of the spin
+ * @param N Lattice size
+ * @param J Interaction strength
+ * @param h External magnetic field
+ * @return Energy difference
+ */
 double energy_diff_single_site(const vector<vector<int>> &spins, int a, int b, int N, double J, double h){
     int s {};
     int nn_sum {0};
@@ -80,7 +222,19 @@ double energy_diff_single_site(const vector<vector<int>> &spins, int a, int b, i
     return interaction_energy + field_energy;
 }
 
-//Implements the metropolis acceptance rule
+
+/**
+ * Implements the Metropolis acceptance rule
+ * 
+ * If the energy difference is negative, the spin flip is always accepted.
+ * Otherwise, the flip is accepted with probability exp(-beta*energy_diff).
+ *
+ * @param spins Spin lattice
+ * @param a Row index of the selected spin
+ * @param b Column index of the selected spin
+ * @param beta Inverse temperature
+ * @param energy_diff Energy difference ΔE for the flip
+ */
 void site_flip(vector<vector<int>> &spins, int a, int b, double beta, double energy_diff){
     if (energy_diff < 0){
         spins.at(a).at(b) *= -1;
@@ -93,8 +247,19 @@ void site_flip(vector<vector<int>> &spins, int a, int b, double beta, double ene
     }
 }
 
-// Performs one monte carlo sweep. random site is selected N x N times and
-// a flip is attempted based on metropolis algorithm.
+
+/**
+ * 
+ * Performs one monte carlo sweep. Random site is selected N x N times and
+ * for each site a flip is attempted based on Metropolis algorithm.
+ * 
+ *
+ * @param spins N x N spin lattice
+ * @param N Lattice size
+ * @param J Interaction strength
+ * @param beta Inverse temperature
+ * @param h External magnetic field
+ */
 void monte_carlo_move(vector<vector<int>> &spins, int N, double J, double beta, double h){
         int a {};
         int b {};
@@ -106,7 +271,19 @@ void monte_carlo_move(vector<vector<int>> &spins, int N, double J, double beta, 
     }
 }
 
-//Calculates the total energy of the lattice
+
+
+/**
+ *
+ * Calculates the total energy of the system by summing nearest-neighbor
+ * interaction energies
+ *
+ * @param spins Spin lattice
+ * @param N Lattice size
+ * @param J Interaction strength
+ * @param h External magnetic field
+ * @return Total energy of the lattice
+ */
 double system_hamiltonian(const vector<vector<int>> &spins, int N, double J, double h){
     double total_energy {0};
     int s {};
@@ -126,7 +303,13 @@ double system_hamiltonian(const vector<vector<int>> &spins, int N, double J, dou
 
 }
 
-//Calculates the average magnetization of the lattice
+/**
+ * Computes the average magnetization per spin
+ *
+ * @param spins Spin lattice
+ * @param N Lattice size
+ * @return Average magnetization per spin
+ */
 double system_magnetization(const vector<vector<int>> &spins, int N){
     double mag {0};
     for (auto row: spins){
@@ -137,15 +320,28 @@ double system_magnetization(const vector<vector<int>> &spins, int N){
     return mag /(N*N);
 }
 
-// prints all elements of vector
-void display_vector(const vector<double> &v){
-    for (auto i : v){
-        cout << i << " ";
-    }
-    cout << endl;
-}
 
-//Computes system energy, average magnetization, specific heat and susceptibility values as a function of temperature
+/**
+ * Computes system energy, average magnetization, specific heat and susceptibility
+ * as a function of temperature
+ *
+ * For each temperature value, the system is first thermalized using
+ * a specified number of Monte Carlo sweeps. After thermalization 
+ * the thermodynamical quantities are calculated
+ *
+ *
+ * @param N Lattice size
+ * @param J Interaction strength
+ * @param h External magnetic field
+ * @param thermalisation_number Number of Monte Carlo sweeps for equilibration
+ * @param mean_number Number of Monte Carlo sweeps used for taking the average
+ * @param spins Spin lattice
+ * @param temperature_values List of temperatures
+ * @param energy_values Empty vector for average energies
+ * @param magnetization_values Empty vector for average magnetizations
+ * @param susceptibility_values Empty vector for susceptibilities
+ * @param specific_heat_values Empty vector for specific heats
+ */
 void compute_thermodynamical_quantities(int N, double J, double h, int thermalisation_number, int mean_number,
                                 vector<vector<int>> &spins,
                                 const vector<double> &temperature_values,
@@ -226,18 +422,27 @@ bool write_data_to_file(const vector<double> &temperature_values,
 }
 
 
-// Sum of background and peak function
+// Sum of background and peak function. The peak position is the estimate for
+// Critical temperature
 Double_t fit_background_and_peak(Double_t *x, Double_t *par) {
       return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]
       + par[3]*TMath::Gaus(x[0],par[4],par[5],true);
 }
 
 
-
+/**
+ * Generates visual snapshots of the spin configuration for specific temperatures
+ * The system is equilibrated for each temperature
+ *
+ * @param N Lattice size
+ * @param J Interaction Strength
+ * @param h External magnetic field
+ * @param initial_spins Initial spin lattice
+ * @param snapshot_temperatures Temperatures at which snapshots are taken
+ */
 void snapshots_of_the_system(int N, double J, double h, const vector<vector<int>> &initial_spins,
                             const vector<double> &snapshot_temperatures
                             ){
-
 
     auto *c = new TCanvas("c","Ising snapshots",1200,400);
     c->Divide(3,1);
@@ -272,154 +477,3 @@ void snapshots_of_the_system(int N, double J, double h, const vector<vector<int>
     c->SaveAs("IsingModel_snapshots.png");
 }
 
-//This is a numerical simulation of Ising model using metropolis algorithm.
-int main(){
-
-    // lattice size is N x N
-    int N {30};
-    // Interaction term
-    double J {1};
-    // External field
-    double h {0};
-    
-    double T_initial {1.5};
-    int thermalisation_number {5000};
-    int mean_number {3000};
-
-
-    //Initialize lattice with random spin values (+1 or -1) for each site
-    vector<vector<int>> spins {};
-    srand(time(nullptr));
-    initialize_lattice(spins, N);
-
-
-    //List of different thermodynamic quantities to derive
-    vector<double> magnetization_values {};
-    vector<double> susceptibility_values {};
-    vector<double> specific_heat_values {};
-    vector<double> energy_values {};
-
-
-    vector<double> temperature_values {};
-    for (int i = 0; i < 60; i++){
-        double temperature = T_initial + 0.02*i;
-        temperature_values.push_back(temperature);
-    }
-
-    compute_thermodynamical_quantities(N, J, h, thermalisation_number, mean_number,
-                                spins, temperature_values, energy_values,
-                                magnetization_values, susceptibility_values,
-                                specific_heat_values);
-
-
-
-    //#####################
-
-    TGraph *gr1 = new TGraph(temperature_values.size(),
-                 temperature_values.data(),
-                 magnetization_values.data());
-
-    TCanvas *c1 = new TCanvas("c1", "Graph Draw Options", 200, 10, 800, 600);
-
-
-    gr1->SetTitle("Magnetization vs Temperature;T;M");
-    gr1->SetMarkerStyle(20);
-    gr1->SetMarkerSize(1.2);
-    gr1->SetLineWidth(2);
-
-    //TF1 *fitFcn = new TF1("fitFcn",fitCurieFunction,1.5,2.3,2);
-
-    //gr1->Fit("fitFcn");
-
-    gr1-> Draw("AC*");
-
-    c1->SaveAs("magnetization_vs_temperature.png");
-
-    //#####################
-
-    TGraph *gr2 = new TGraph(temperature_values.size(),
-                 temperature_values.data(),
-                 energy_values.data());
-
-    TCanvas *c2 = new TCanvas("c2", "Graph Draw Options", 200, 10, 800, 600);
-
-    gr2->SetTitle("Energy vs Temperature;T;E");
-    gr2->SetMarkerStyle(20);
-    gr2->SetMarkerSize(1.2);
-    gr2->SetLineWidth(2);
-
-    gr2-> Draw("AC*");
-
-    c2->SaveAs("energy_vs_temperature.png");
-
-    //###############################
-
-    TGraph *gr3 = new TGraph(temperature_values.size(),
-                 temperature_values.data(),
-                 susceptibility_values.data());
-
-    TCanvas *c3 = new TCanvas("c3", "Graph Draw Options", 200, 10, 800, 600);
-
-    gr3->SetTitle("Susceptibility vs Temperature;T;X");
-    gr3->SetMarkerStyle(20);
-    gr3->SetMarkerSize(1.2);
-    gr3->SetLineWidth(2);
-
-    TF1 *fitFcn = new TF1("fitFcn",fit_background_and_peak,2,3,6);
-
-    fitFcn->SetParNames("a","b","c", "A", "Tc", "sigma");
-    fitFcn->SetParameters(0, 0, 0, 50, 2.27, 0.03);
-
-    gr3->Fit("fitFcn");
-
-    double Tc = fitFcn->GetParameter(4);
-    gr3-> Draw("AC*");
-
-    c3->SaveAs("susceptibility_vs_temperature.png");
-
-    //#######################################
-    TGraph *gr4 = new TGraph(temperature_values.size(),
-                 temperature_values.data(),
-                 specific_heat_values.data());
-
-    TCanvas *c4 = new TCanvas("c4", "Graph Draw Options", 200, 10, 800, 600);
-
-    gr4->SetTitle("Specific Heat vs Temperature;T;C");
-    gr4->SetMarkerStyle(20);
-    gr4->SetMarkerSize(1.2);
-    gr4->SetLineWidth(2);
-
-
-    gr4-> Draw("AC*");
-
-    c4->SaveAs("specific_heat_vs_temperature.png");
-
-
-
-    //########################################
-
-    int snapshot_N {100};
-    vector<double> snapshot_temperatures {};
-    snapshot_temperatures.push_back(Tc-1);
-    snapshot_temperatures.push_back(Tc);
-    snapshot_temperatures.push_back(Tc+1);
-
-    vector<vector<int>> initial_spins {};
-    initialize_lattice(initial_spins, snapshot_N);
-
-    snapshots_of_the_system(snapshot_N, J, h, initial_spins, snapshot_temperatures);
-
-
-    //---------------------------------
-
-    if (write_data_to_file(temperature_values, energy_values, magnetization_values,
-                        susceptibility_values, specific_heat_values)
-        ){
-            cout << "file created succesfully" << endl;
-        }else{
-            cout << "Error creating file" << endl;
-        }
-
-
-    return 0;
-}
