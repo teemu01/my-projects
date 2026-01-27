@@ -13,11 +13,10 @@ In this project I studied open quantum system dynamics using pure dephasing mode
 - Built a PyTorch neural-Network to classify bath types
 
 ## Structure factor calculation
-An analysis tool used to compute structure factor from a data obtained from cp2k ab initio molecular dynamics simulations.
-Developed during a summer internship.
-- Performs preprocessing on the data
-- Uses numba to speed up calculation
-- Compares simulation data to experimental data and visualizes the results.
+A python implementation of modified Debye scattering equation to calculate a structure factor from molecular dynamics trajectories.
+- Constructs a large supercell and applies a weight function to negate boundary effects
+- Simulation results are compared with experimental data with different pressure conditions.
+- Numba is used to sum different contributions of structure factor faster.
 
 ## Image classification
 An image classification project using machine learning. Images are read from urls and preprocessed for an alaysis.
